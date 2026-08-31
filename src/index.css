@@ -1,0 +1,321 @@
+/* ============================================================
+   STORYMAKER — Design tokens
+   Paleta editorial de casamento: verde-oliva, palha, off-white.
+   Um único acento (argila) reservado para a ação principal.
+   ============================================================ */
+:root {
+  --olive: #6b705c;
+  --olive-dark: #4d5142;
+  --olive-light: #909a7c;
+  --straw: #e8dfc8;
+  --straw-soft: #f1ebda;
+  --offwhite: #f8f6f1;
+  --ink: #33322c;
+  --ink-soft: #6f6a5c;
+  --clay: #a9714f;
+  --clay-dark: #8f5c3d;
+  --line: rgba(51, 50, 44, 0.12);
+  --white: #ffffff;
+
+  --font-display: 'Fraunces', 'Iowan Old Style', 'Palatino Linotype', serif;
+  --font-body: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  --radius-s: 2px;
+  --radius-m: 4px;
+  --shadow-soft: 0 18px 40px -24px rgba(51, 50, 44, 0.35);
+
+  --container: 1180px;
+  --transition: 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--offwhite);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.6;
+  min-height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+img,
+video {
+  max-width: 100%;
+  display: block;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  margin: 0;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.eyebrow {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--olive);
+  font-weight: 600;
+}
+
+.section {
+  padding: clamp(64px, 10vw, 128px) 0;
+}
+
+.section--tight {
+  padding: clamp(48px, 7vw, 88px) 0;
+}
+
+.section--straw {
+  background: var(--straw-soft);
+}
+
+.section--olive {
+  background: var(--olive);
+  color: var(--offwhite);
+}
+
+.section--olive h2,
+.section--olive h3,
+.section--olive .eyebrow {
+  color: var(--offwhite);
+}
+
+.container {
+  width: 100%;
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 0 clamp(20px, 5vw, 40px);
+}
+
+.serif-italic {
+  font-style: italic;
+  font-weight: 400;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: var(--radius-s);
+  padding: 14px 30px;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-weight: 600;
+  border: 1px solid transparent;
+  transition: transform var(--transition), background var(--transition), color var(--transition),
+    border-color var(--transition);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn-primary {
+  background: var(--clay);
+  color: var(--offwhite);
+}
+.btn-primary:hover {
+  background: var(--clay-dark);
+}
+
+.btn-outline {
+  background: transparent;
+  border-color: currentColor;
+  color: inherit;
+}
+.btn-outline:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.section--olive .btn-outline:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--ink-soft);
+  padding: 10px 16px;
+  font-size: 0.75rem;
+}
+.btn-ghost:hover {
+  color: var(--ink);
+}
+
+.fade-up {
+  animation: fadeUp 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================================
+   Modo de edição — inputs "invisíveis" que herdam a tipografia
+   do texto que estão substituindo, para edição inline real.
+   ============================================================ */
+.editable {
+  background: transparent;
+  border: none;
+  border-bottom: 1px dashed transparent;
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  width: 100%;
+  padding: 2px 0;
+  transition: border-color var(--transition), background var(--transition);
+}
+
+.editable:hover {
+  border-bottom-color: var(--line);
+}
+
+.editable:focus {
+  outline: none;
+  border-bottom-color: var(--clay);
+  background: rgba(169, 113, 79, 0.06);
+}
+
+textarea.editable {
+  resize: vertical;
+  min-height: 64px;
+}
+
+.edit-frame {
+  position: relative;
+  outline: 1px dashed rgba(169, 113, 79, 0.45);
+  outline-offset: 6px;
+  border-radius: var(--radius-s);
+}
+
+.edit-controls {
+  display: inline-flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--white);
+  color: var(--ink-soft);
+  transition: all var(--transition);
+}
+.icon-btn:hover {
+  color: var(--clay);
+  border-color: var(--clay);
+}
+
+/* ============================================================
+   Admin toolbar
+   ============================================================ */
+.admin-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  background: var(--ink);
+  color: var(--offwhite);
+  font-family: var(--font-body);
+}
+
+.admin-toolbar__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px clamp(16px, 4vw, 32px);
+  font-size: 0.82rem;
+}
+
+.admin-toolbar select {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--offwhite);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-s);
+  padding: 6px 10px;
+  font-size: 0.8rem;
+}
+
+.tag {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 3px 8px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.tag--live {
+  background: var(--clay);
+}
+
+@media print {
+  .no-print,
+  .admin-toolbar,
+  .fab {
+    display: none !important;
+  }
+  body {
+    background: white;
+  }
+  .section {
+    padding: 24px 0;
+    break-inside: avoid;
+  }
+  a[href]:after {
+    content: '';
+  }
+}
