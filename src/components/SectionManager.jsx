@@ -6,7 +6,6 @@ const LABELS = {
   about: 'Sobre o nosso olhar',
   gallery: 'Portfólio de vídeos',
   experiences: 'Experiências',
-  comparison: 'Comparação',
   realtime: 'Experiência em tempo real',
   howItWorks: 'Como funciona',
   testimonials: 'Depoimentos',

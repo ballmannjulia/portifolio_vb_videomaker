@@ -6,7 +6,6 @@ import Hero from '../components/Hero.jsx';
 import About from '../components/About.jsx';
 import VideoGallery from '../components/VideoGallery.jsx';
 import Experiences from '../components/Experiences.jsx';
-import Comparison from '../components/Comparison.jsx';
 import RealTime from '../components/RealTime.jsx';
 import HowItWorks from '../components/HowItWorks.jsx';
 import Testimonials from '../components/Testimonials.jsx';
@@ -40,7 +39,6 @@ export default function Portfolio() {
     about: <About data={data} editMode={editMode} updateField={p.updateField} />,
     gallery: <VideoGallery data={data} editMode={editMode} actions={listActions} />,
     experiences: <Experiences data={data} editMode={editMode} actions={listActions} />,
-    comparison: <Comparison data={data} editMode={editMode} />,
     realtime: <RealTime data={data} editMode={editMode} updateField={p.updateField} />,
     howItWorks: <HowItWorks data={data} editMode={editMode} updateField={p.updateField} />,
     testimonials: <Testimonials data={data} editMode={editMode} actions={listActions} />,
