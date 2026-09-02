@@ -30,7 +30,11 @@ export default function VideoModal({ video, onClose }) {
   if (!video) return null;
 
   const embed = toEmbedUrl(video.url);
-  const isDirectFile = video.url && /\.(mp4|webm|mov)(\?.*)?$/i.test(video.url);
+  const isDirectFile =
+    !!video.url &&
+    (video.url.startsWith('data:video/') ||
+      video.url.startsWith('blob:') ||
+      /\.(mp4|webm|mov)(\?.*)?$/i.test(video.url));
   const vertical = video.orientacao !== 'horizontal';
 
   return (

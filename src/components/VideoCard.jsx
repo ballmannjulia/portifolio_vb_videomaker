@@ -1,5 +1,6 @@
-import { Play, ArrowUp, ArrowDown, EyeOff, Eye, Trash2, Film } from 'lucide-react';
+import { Play, ArrowUp, ArrowDown, EyeOff, Eye, Trash2, Film, Upload } from 'lucide-react';
 import EditableText from './EditableText.jsx';
+import { saveUploadedFile } from '../utils/storage.js';
 
 export default function VideoCard({
   video,
@@ -13,6 +14,21 @@ export default function VideoCard({
   isLast,
 }) {
   const vertical = video.orientacao !== 'horizontal';
+
+  const handleUpload = async (event, field, acceptType) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const result = await saveUploadedFile(file);
+      onChangeField(video.id, field, result?.dataUrl || '');
+    } catch (error) {
+      console.error(error);
+      window.alert('Não foi possível enviar o arquivo. Tente um arquivo menor ou em outro formato.');
+    } finally {
+      event.target.value = '';
+    }
+  };
 
   if (!editMode && !video.visivel) return null;
 
@@ -130,12 +146,50 @@ export default function VideoCard({
             placeholder="Link do vídeo (.mp4 ou embed)"
             onChange={(v) => onChangeField(video.id, 'url', v)}
           />
+          <label
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              width: 'fit-content',
+              padding: '8px 10px',
+              border: '1px solid var(--line)',
+              borderRadius: 6,
+              background: 'var(--offwhite)',
+              color: 'var(--ink)',
+              cursor: 'pointer',
+              fontSize: '0.78rem',
+            }}
+          >
+            <Upload size={14} />
+            Enviar vídeo
+            <input type="file" accept="video/*,.mp4,.mov,.webm" hidden onChange={(event) => handleUpload(event, 'url', 'video')} />
+          </label>
           <EditableText
             editMode
             value={video.capa}
             placeholder="URL da imagem de capa"
             onChange={(v) => onChangeField(video.id, 'capa', v)}
           />
+          <label
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              width: 'fit-content',
+              padding: '8px 10px',
+              border: '1px solid var(--line)',
+              borderRadius: 6,
+              background: 'var(--offwhite)',
+              color: 'var(--ink)',
+              cursor: 'pointer',
+              fontSize: '0.78rem',
+            }}
+          >
+            <Upload size={14} />
+            Enviar capa
+            <input type="file" accept="image/*" hidden onChange={(event) => handleUpload(event, 'capa', 'image')} />
+          </label>
           <select
             value={video.orientacao}
             onChange={(e) => onChangeField(video.id, 'orientacao', e.target.value)}

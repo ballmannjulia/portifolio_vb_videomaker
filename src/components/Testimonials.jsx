@@ -1,9 +1,25 @@
-import { Plus, Trash2, Quote, ArrowUp, ArrowDown, Eye, EyeOff } from 'lucide-react';
+import { Plus, Trash2, Quote, ArrowUp, ArrowDown, Eye, EyeOff, ImageUp } from 'lucide-react';
 import EditableText from './EditableText.jsx';
+import { saveUploadedFile } from '../utils/storage.js';
 
 export default function Testimonials({ data, editMode, actions }) {
   const depoimentos = data.depoimentos;
   const visibleCount = depoimentos.filter((d) => d.visivel).length;
+
+  const handleUpload = async (event, itemId, field) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const result = await saveUploadedFile(file);
+      actions.updateArrayItem('depoimentos', itemId, field, result?.dataUrl || '');
+    } catch (error) {
+      console.error(error);
+      window.alert('Não foi possível enviar a imagem. Tente outra imagem menor ou em outro formato.');
+    } finally {
+      event.target.value = '';
+    }
+  };
 
   if (!editMode && visibleCount === 0) return null;
 
@@ -94,6 +110,25 @@ export default function Testimonials({ data, editMode, actions }) {
                       onChange={(v) => actions.updateArrayItem('depoimentos', dep.id, 'foto', v)}
                       style={{ fontSize: '0.78rem' }}
                     />
+                    <label
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        width: 'fit-content',
+                        padding: '8px 10px',
+                        border: '1px solid var(--line)',
+                        borderRadius: 6,
+                        background: 'var(--offwhite)',
+                        color: 'var(--ink)',
+                        cursor: 'pointer',
+                        fontSize: '0.78rem',
+                      }}
+                    >
+                      <ImageUp size={14} />
+                      Enviar foto
+                      <input type="file" accept="image/*" hidden onChange={(event) => handleUpload(event, dep.id, 'foto')} />
+                    </label>
                     <div style={{ display: 'flex', gap: 6, borderTop: '1px solid var(--line)', paddingTop: 12 }}>
                       <button className="icon-btn" onClick={() => actions.moveItem('depoimentos', dep.id, 'up')} disabled={i === 0}>
                         <ArrowUp size={14} />
