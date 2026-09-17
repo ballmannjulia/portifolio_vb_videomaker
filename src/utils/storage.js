@@ -17,6 +17,7 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const SUPABASE_BUCKET = import.meta.env.VITE_SUPABASE_BUCKET || 'portfolio-media';
 const MEDIA_DB_NAME = 'storymaker-media-db';
 const MEDIA_STORE_NAME = 'media';
+const MEDIA_REFERENCE_PREFIX = 'indexeddb-media:';
 
 function safeParse(json, fallback) {
   try {
@@ -58,10 +59,24 @@ function openMediaDatabase() {
   });
 }
 
+function getFileFromIndexedDb(id) {
+  return openMediaDatabase().then(
+    (db) =>
+      new Promise((resolve, reject) => {
+        const transaction = db.transaction(MEDIA_STORE_NAME, 'readonly');
+        const store = transaction.objectStore(MEDIA_STORE_NAME);
+        const request = store.get(id);
+
+        request.onsuccess = () => resolve(request.result || null);
+        request.onerror = () => reject(request.error || new Error('Não foi possível carregar o arquivo salvo.'));
+      })
+  );
+}
+
 async function saveFileToIndexedDb(file) {
   const id = generateId('upload');
   const db = await openMediaDatabase();
-  const blobUrl = URL.createObjectURL(file);
+  const persistentReference = `${MEDIA_REFERENCE_PREFIX}${id}`;
 
   await new Promise((resolve, reject) => {
     const transaction = db.transaction(MEDIA_STORE_NAME, 'readwrite');
@@ -84,7 +99,7 @@ async function saveFileToIndexedDb(file) {
     name: file.name,
     type: file.type,
     size: file.size,
-    dataUrl: blobUrl,
+    dataUrl: persistentReference,
     createdAt: new Date().toISOString(),
     storage: 'indexeddb',
   };
@@ -93,7 +108,37 @@ async function saveFileToIndexedDb(file) {
   map[id] = record;
   saveUploadedMediaMap(map);
 
-  return { id, dataUrl: blobUrl, record };
+  return { id, dataUrl: persistentReference, record };
+}
+
+export async function resolveUploadedMediaUrl(value) {
+  if (!value) return '';
+
+  let mediaId = null;
+
+  if (value.startsWith(MEDIA_REFERENCE_PREFIX)) {
+    mediaId = value.slice(MEDIA_REFERENCE_PREFIX.length);
+  } else if (value.startsWith('blob:')) {
+    // Compatibilidade com uploads feitos antes da correção: o projeto salvava
+    // a URL blob temporária no localStorage. Após F5 essa URL deixa de existir,
+    // mas o arquivo continua no IndexedDB e pode ser reencontrado pelo mapa.
+    const map = loadUploadedMediaMap();
+    const legacyRecord = Object.values(map).find(
+      (record) => record?.storage === 'indexeddb' && record?.dataUrl === value
+    );
+    mediaId = legacyRecord?.id || null;
+  }
+
+  if (!mediaId) return value;
+
+  const storedFile = await getFileFromIndexedDb(mediaId);
+  if (!storedFile?.blob) return '';
+
+  return URL.createObjectURL(storedFile.blob);
+}
+
+export function isPersistentMediaReference(value) {
+  return typeof value === 'string' && value.startsWith(MEDIA_REFERENCE_PREFIX);
 }
 
 export async function saveUploadedFile(file) {
