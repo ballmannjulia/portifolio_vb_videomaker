@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { X, Film } from 'lucide-react';
+import { useMediaUrl } from '../hooks/useMediaUrl.js';
 
 function toEmbedUrl(url) {
   if (!url) return null;
@@ -15,6 +16,8 @@ function toEmbedUrl(url) {
 }
 
 export default function VideoModal({ video, onClose }) {
+  const resolvedUrl = useMediaUrl(video?.url);
+
   useEffect(() => {
     if (!video) return undefined;
 
@@ -25,16 +28,17 @@ export default function VideoModal({ video, onClose }) {
       window.removeEventListener('keydown', onKey);
       document.body.style.overflow = '';
     };
-  }, [onClose]);
+  }, [video, onClose]);
 
   if (!video) return null;
 
-  const embed = toEmbedUrl(video.url);
+  const embed = toEmbedUrl(resolvedUrl || video.url);
+  const directUrl = resolvedUrl || video.url;
   const isDirectFile =
-    !!video.url &&
-    (video.url.startsWith('data:video/') ||
-      video.url.startsWith('blob:') ||
-      /\.(mp4|webm|mov)(\?.*)?$/i.test(video.url));
+    !!directUrl &&
+    (directUrl.startsWith('data:video/') ||
+      directUrl.startsWith('blob:') ||
+      /\.(mp4|webm|mov)(\?.*)?$/i.test(directUrl));
   const vertical = video.orientacao !== 'horizontal';
 
   return (
@@ -53,6 +57,7 @@ export default function VideoModal({ video, onClose }) {
       }}
     >
       <button
+        type="button"
         onClick={onClose}
         aria-label="Fechar"
         style={{
@@ -94,7 +99,7 @@ export default function VideoModal({ video, onClose }) {
             style={{ width: '100%', height: '100%', border: 'none' }}
           />
         ) : isDirectFile ? (
-          <video src={video.url} controls autoPlay style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <video key={directUrl} src={directUrl} controls autoPlay playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         ) : (
           <div
             style={{

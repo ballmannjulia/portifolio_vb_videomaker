@@ -1,6 +1,7 @@
 import { Play, ArrowUp, ArrowDown, EyeOff, Eye, Trash2, Film, Upload } from 'lucide-react';
 import EditableText from './EditableText.jsx';
 import { saveUploadedFile } from '../utils/storage.js';
+import { useMediaUrl } from '../hooks/useMediaUrl.js';
 
 export default function VideoCard({
   video,
@@ -14,8 +15,9 @@ export default function VideoCard({
   isLast,
 }) {
   const vertical = video.orientacao !== 'horizontal';
+  const coverUrl = useMediaUrl(video.capa);
 
-  const handleUpload = async (event, field, acceptType) => {
+  const handleUpload = async (event, field) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -24,7 +26,7 @@ export default function VideoCard({
       onChangeField(video.id, field, result?.dataUrl || '');
     } catch (error) {
       console.error(error);
-      window.alert('Não foi possível enviar o arquivo. Tente um arquivo menor ou em outro formato.');
+      window.alert(error?.message || 'Não foi possível enviar o arquivo. Tente um arquivo menor ou em outro formato.');
     } finally {
       event.target.value = '';
     }
@@ -43,6 +45,7 @@ export default function VideoCard({
       }}
     >
       <button
+        type="button"
         onClick={() => onOpen(video)}
         style={{
           position: 'relative',
@@ -57,9 +60,9 @@ export default function VideoCard({
           boxShadow: 'var(--shadow-soft)',
         }}
       >
-        {video.capa ? (
+        {coverUrl ? (
           <img
-            src={video.capa}
+            src={coverUrl}
             alt={video.titulo}
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
           />
@@ -163,7 +166,7 @@ export default function VideoCard({
           >
             <Upload size={14} />
             Enviar vídeo
-            <input type="file" accept="video/*,.mp4,.mov,.webm" hidden onChange={(event) => handleUpload(event, 'url', 'video')} />
+            <input type="file" accept="video/*,.mp4,.mov,.webm" hidden onChange={(event) => handleUpload(event, 'url')} />
           </label>
           <EditableText
             editMode
@@ -188,7 +191,7 @@ export default function VideoCard({
           >
             <Upload size={14} />
             Enviar capa
-            <input type="file" accept="image/*" hidden onChange={(event) => handleUpload(event, 'capa', 'image')} />
+            <input type="file" accept="image/*" hidden onChange={(event) => handleUpload(event, 'capa')} />
           </label>
           <select
             value={video.orientacao}
@@ -200,16 +203,16 @@ export default function VideoCard({
           </select>
 
           <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
-            <button className="icon-btn" onClick={() => onMove(video.id, 'up')} disabled={isFirst} title="Mover para cima">
+            <button type="button" className="icon-btn" onClick={() => onMove(video.id, 'up')} disabled={isFirst} title="Mover para cima">
               <ArrowUp size={14} />
             </button>
-            <button className="icon-btn" onClick={() => onMove(video.id, 'down')} disabled={isLast} title="Mover para baixo">
+            <button type="button" className="icon-btn" onClick={() => onMove(video.id, 'down')} disabled={isLast} title="Mover para baixo">
               <ArrowDown size={14} />
             </button>
-            <button className="icon-btn" onClick={() => onToggleVisibility(video.id)} title={video.visivel ? 'Ocultar' : 'Exibir'}>
+            <button type="button" className="icon-btn" onClick={() => onToggleVisibility(video.id)} title={video.visivel ? 'Ocultar' : 'Exibir'}>
               {video.visivel ? <Eye size={14} /> : <EyeOff size={14} />}
             </button>
-            <button className="icon-btn" onClick={() => onRemove(video.id)} title="Remover vídeo" style={{ marginLeft: 'auto' }}>
+            <button type="button" className="icon-btn" onClick={() => onRemove(video.id)} title="Remover vídeo" style={{ marginLeft: 'auto' }}>
               <Trash2 size={14} />
             </button>
           </div>
