@@ -16,8 +16,7 @@ export default function Portfolio() {
   const p = usePortfolio();
   const { data, editMode, clientPreview } = p;
 
-  const showAdmin = !clientPreview;
-  const isEditingSections = editMode;
+  const isEditingSections = editMode && !clientPreview;
 
   const listActions = {
     updateArrayItem: p.updateArrayItem,
@@ -34,15 +33,17 @@ export default function Portfolio() {
     toggleItemVisibility: p.toggleItemVisibility,
   };
 
+  const effectiveEditMode = editMode && !clientPreview;
+
   const SECTION_COMPONENTS = {
-    hero: <Hero data={data} editMode={editMode} updateField={p.updateField} />,
-    about: <About data={data} editMode={editMode} updateField={p.updateField} />,
-    gallery: <VideoGallery data={data} editMode={editMode} actions={listActions} />,
-    experiences: <Experiences data={data} editMode={editMode} actions={listActions} />,
-    realtime: <RealTime data={data} editMode={editMode} updateField={p.updateField} />,
-    howItWorks: <HowItWorks data={data} editMode={editMode} updateField={p.updateField} />,
-    testimonials: <Testimonials data={data} editMode={editMode} actions={listActions} />,
-    contact: <Contact data={data} editMode={editMode} updateField={p.updateField} />,
+    hero: <Hero data={data} editMode={effectiveEditMode} updateField={p.updateField} />,
+    about: <About data={data} editMode={effectiveEditMode} updateField={p.updateField} />,
+    gallery: <VideoGallery data={data} editMode={effectiveEditMode} actions={listActions} />,
+    experiences: <Experiences data={data} editMode={effectiveEditMode} actions={listActions} />,
+    realtime: <RealTime data={data} editMode={effectiveEditMode} updateField={p.updateField} />,
+    howItWorks: <HowItWorks data={data} editMode={effectiveEditMode} updateField={p.updateField} />,
+    testimonials: <Testimonials data={data} editMode={effectiveEditMode} actions={listActions} />,
+    contact: <Contact data={data} editMode={effectiveEditMode} updateField={p.updateField} />,
   };
 
   const order = data.configuracoes.sectionOrder;
@@ -50,37 +51,36 @@ export default function Portfolio() {
 
   return (
     <>
-      {showAdmin && (
-        <AdminToolbar
-          editMode={editMode}
-          setEditMode={p.setEditMode}
-          clientPreview={clientPreview}
-          setClientPreview={p.setClientPreview}
-          isDirty={p.isDirty}
-          save={p.save}
-          cancel={p.cancel}
-          resetToOriginal={p.resetToOriginal}
-          duplicateProposal={p.duplicateProposal}
-          switchProposal={p.switchProposal}
-          deleteProposal={p.deleteProposal}
-          proposalsList={p.proposalsList}
-          activeId={p.activeId}
-          activeProposalMeta={p.activeProposalMeta}
-        />
-      )}
-      {showAdmin && isEditingSections && (
+      <AdminToolbar
+        editMode={editMode}
+        setEditMode={p.setEditMode}
+        clientPreview={clientPreview}
+        setClientPreview={p.setClientPreview}
+        isDirty={p.isDirty}
+        save={p.save}
+        cancel={p.cancel}
+        resetToOriginal={p.resetToOriginal}
+        duplicateProposal={p.duplicateProposal}
+        switchProposal={p.switchProposal}
+        deleteProposal={p.deleteProposal}
+        proposalsList={p.proposalsList}
+        activeId={p.activeId}
+        activeProposalMeta={p.activeProposalMeta}
+      />
+
+      {isEditingSections && (
         <div className="admin-toolbar no-print">
           <SectionManager order={order} visibility={visibility} moveSection={p.moveSection} toggleSection={p.toggleSection} />
         </div>
       )}
 
-      <Header data={data} editMode={editMode} updateField={p.updateField} />
+      <Header data={data} editMode={effectiveEditMode} updateField={p.updateField} />
 
       <main>
         {order.map((key) => {
-          if (!editMode && !visibility[key]) return null;
+          if (!effectiveEditMode && !visibility[key]) return null;
           return (
-            <div key={key} style={{ opacity: editMode && !visibility[key] ? 0.4 : 1 }}>
+            <div key={key} style={{ opacity: effectiveEditMode && !visibility[key] ? 0.4 : 1 }}>
               {SECTION_COMPONENTS[key]}
             </div>
           );
