@@ -36,6 +36,11 @@ jobs:
         run: npm ci --no-audit --no-fund
 
       - name: Build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_SUPABASE_BUCKET: ${{ secrets.VITE_SUPABASE_BUCKET }}
+          VITE_PUBLIC_SITE_URL: https://ballmannjulia.github.io/portifolio_vb_videomaker/
         run: npm run build
 
       - name: Upload artifact
