@@ -1,6 +1,7 @@
 import { Plus, Trash2, Quote, ArrowUp, ArrowDown, Eye, EyeOff, ImageUp } from 'lucide-react';
 import EditableText from './EditableText.jsx';
 import { saveUploadedFile } from '../utils/storage.js';
+import { useMediaUrl } from '../hooks/useMediaUrl.js';
 
 export default function Testimonials({ data, editMode, actions }) {
   const depoimentos = data.depoimentos;
@@ -15,7 +16,7 @@ export default function Testimonials({ data, editMode, actions }) {
       actions.updateArrayItem('depoimentos', itemId, field, result?.dataUrl || '');
     } catch (error) {
       console.error(error);
-      window.alert('Não foi possível enviar a imagem. Tente outra imagem menor ou em outro formato.');
+      window.alert(error?.message || 'Não foi possível enviar a imagem. Tente outra imagem menor ou em outro formato.');
     } finally {
       event.target.value = '';
     }
@@ -59,23 +60,7 @@ export default function Testimonials({ data, editMode, actions }) {
                   style={{ fontStyle: 'italic', color: 'var(--ink)', lineHeight: 1.7, fontSize: '0.98rem' }}
                 />
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 6 }}>
-                  {dep.foto ? (
-                    <img
-                      src={dep.foto}
-                      alt={dep.noivos}
-                      style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover' }}
-                    />
-                  ) : (
-                    <div
-                      style={{
-                        width: 44,
-                        height: 44,
-                        borderRadius: '50%',
-                        background: 'var(--straw)',
-                        flexShrink: 0,
-                      }}
-                    />
-                  )}
+                  <TestimonialPhoto source={dep.foto} alt={dep.noivos} />
                   <div style={{ flex: 1 }}>
                     <EditableText
                       editMode={editMode}
@@ -130,20 +115,22 @@ export default function Testimonials({ data, editMode, actions }) {
                       <input type="file" accept="image/*" hidden onChange={(event) => handleUpload(event, dep.id, 'foto')} />
                     </label>
                     <div style={{ display: 'flex', gap: 6, borderTop: '1px solid var(--line)', paddingTop: 12 }}>
-                      <button className="icon-btn" onClick={() => actions.moveItem('depoimentos', dep.id, 'up')} disabled={i === 0}>
+                      <button type="button" className="icon-btn" onClick={() => actions.moveItem('depoimentos', dep.id, 'up')} disabled={i === 0}>
                         <ArrowUp size={14} />
                       </button>
                       <button
+                        type="button"
                         className="icon-btn"
                         onClick={() => actions.moveItem('depoimentos', dep.id, 'down')}
                         disabled={i === depoimentos.length - 1}
                       >
                         <ArrowDown size={14} />
                       </button>
-                      <button className="icon-btn" onClick={() => actions.toggleItemVisibility('depoimentos', dep.id)}>
+                      <button type="button" className="icon-btn" onClick={() => actions.toggleItemVisibility('depoimentos', dep.id)}>
                         {dep.visivel ? <Eye size={14} /> : <EyeOff size={14} />}
                       </button>
                       <button
+                        type="button"
                         className="icon-btn"
                         style={{ marginLeft: 'auto' }}
                         onClick={() => actions.removeTestimonial(dep.id)}
@@ -159,6 +146,7 @@ export default function Testimonials({ data, editMode, actions }) {
 
           {editMode && (
             <button
+              type="button"
               onClick={actions.addTestimonial}
               className="btn btn-outline"
               style={{ minHeight: 160, justifyContent: 'center' }}
@@ -169,5 +157,31 @@ export default function Testimonials({ data, editMode, actions }) {
         </div>
       </div>
     </section>
+  );
+}
+
+function TestimonialPhoto({ source, alt }) {
+  const resolved = useMediaUrl(source);
+
+  if (!resolved) {
+    return (
+      <div
+        style={{
+          width: 44,
+          height: 44,
+          borderRadius: '50%',
+          background: 'var(--straw)',
+          flexShrink: 0,
+        }}
+      />
+    );
+  }
+
+  return (
+    <img
+      src={resolved}
+      alt={alt}
+      style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+    />
   );
 }

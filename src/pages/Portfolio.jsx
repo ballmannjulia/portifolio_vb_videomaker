@@ -14,9 +14,29 @@ import Footer from '../components/Footer.jsx';
 
 export default function Portfolio() {
   const p = usePortfolio();
-  const { data, editMode, clientPreview } = p;
+  const { data, editMode, clientPreview, isSharedView, sharedLoading, sharedError } = p;
 
-  const isEditingSections = editMode && !clientPreview;
+  if (isSharedView && sharedLoading) {
+    return (
+      <main style={{ minHeight: '70vh', display: 'grid', placeItems: 'center', padding: 32 }}>
+        <p style={{ color: 'var(--ink-soft)' }}>Carregando proposta...</p>
+      </main>
+    );
+  }
+
+  if (isSharedView && sharedError) {
+    return (
+      <main style={{ minHeight: '70vh', display: 'grid', placeItems: 'center', padding: 32 }}>
+        <div style={{ maxWidth: 560, textAlign: 'center' }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', marginBottom: 16 }}>Não foi possível abrir esta proposta</h1>
+          <p style={{ color: 'var(--ink-soft)', lineHeight: 1.7 }}>{sharedError}</p>
+        </div>
+      </main>
+    );
+  }
+
+  const isEditingSections = editMode && !clientPreview && !isSharedView;
+  const effectiveEditMode = editMode && !clientPreview && !isSharedView;
 
   const listActions = {
     updateArrayItem: p.updateArrayItem,
@@ -32,8 +52,6 @@ export default function Portfolio() {
     moveItem: p.moveItem,
     toggleItemVisibility: p.toggleItemVisibility,
   };
-
-  const effectiveEditMode = editMode && !clientPreview;
 
   const SECTION_COMPONENTS = {
     hero: <Hero data={data} editMode={effectiveEditMode} updateField={p.updateField} />,
@@ -51,22 +69,27 @@ export default function Portfolio() {
 
   return (
     <>
-      <AdminToolbar
-        editMode={editMode}
-        setEditMode={p.setEditMode}
-        clientPreview={clientPreview}
-        setClientPreview={p.setClientPreview}
-        isDirty={p.isDirty}
-        save={p.save}
-        cancel={p.cancel}
-        resetToOriginal={p.resetToOriginal}
-        duplicateProposal={p.duplicateProposal}
-        switchProposal={p.switchProposal}
-        deleteProposal={p.deleteProposal}
-        proposalsList={p.proposalsList}
-        activeId={p.activeId}
-        activeProposalMeta={p.activeProposalMeta}
-      />
+      {!isSharedView && (
+        <AdminToolbar
+          editMode={editMode}
+          setEditMode={p.setEditMode}
+          clientPreview={clientPreview}
+          setClientPreview={p.setClientPreview}
+          isDirty={p.isDirty}
+          save={p.save}
+          cancel={p.cancel}
+          resetToOriginal={p.resetToOriginal}
+          duplicateProposal={p.duplicateProposal}
+          switchProposal={p.switchProposal}
+          deleteProposal={p.deleteProposal}
+          proposalsList={p.proposalsList}
+          activeId={p.activeId}
+          activeProposalMeta={p.activeProposalMeta}
+          publishForClient={p.publishForClient}
+          publishState={p.publishState}
+          cloudSharingConfigured={p.cloudSharingConfigured}
+        />
+      )}
 
       {isEditingSections && (
         <div className="admin-toolbar no-print">
@@ -79,9 +102,11 @@ export default function Portfolio() {
       <main>
         {order.map((key) => {
           if (!effectiveEditMode && !visibility[key]) return null;
+          const component = SECTION_COMPONENTS[key];
+          if (!component) return null;
           return (
             <div key={key} style={{ opacity: effectiveEditMode && !visibility[key] ? 0.4 : 1 }}>
-              {SECTION_COMPONENTS[key]}
+              {component}
             </div>
           );
         })}

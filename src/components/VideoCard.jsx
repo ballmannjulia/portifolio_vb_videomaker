@@ -166,7 +166,7 @@ export default function VideoCard({
           >
             <Upload size={14} />
             Enviar vídeo
-            <input type="file" accept="video/*,.mp4,.mov,.webm" hidden onChange={(event) => handleUpload(event, 'url')} />
+            <input type="file" accept="video/mp4,video/webm,.mp4,.webm" hidden onChange={(event) => handleUpload(event, 'url')} />
           </label>
           <EditableText
             editMode

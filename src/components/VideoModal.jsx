@@ -1,22 +1,53 @@
-import { useEffect } from 'react';
-import { X, Film } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { X, Film, AlertCircle } from 'lucide-react';
 import { useMediaUrl } from '../hooks/useMediaUrl.js';
 
-function toEmbedUrl(url) {
-  if (!url) return null;
-  if (url.includes('youtube.com') || url.includes('youtu.be')) {
-    const idMatch = url.match(/(?:v=|youtu\.be\/)([\w-]{6,})/);
-    return idMatch ? `https://www.youtube.com/embed/${idMatch[1]}?autoplay=1` : null;
+function toEmbedUrl(rawUrl) {
+  if (!rawUrl) return null;
+
+  try {
+    const url = new URL(rawUrl);
+    const host = url.hostname.replace(/^www\./, '').toLowerCase();
+
+    if (host === 'youtu.be') {
+      const id = url.pathname.split('/').filter(Boolean)[0];
+      return id ? `https://www.youtube.com/embed/${id}?autoplay=1` : null;
+    }
+
+    if (host === 'youtube.com' || host === 'm.youtube.com') {
+      const parts = url.pathname.split('/').filter(Boolean);
+      let id = url.searchParams.get('v');
+      if (!id && ['shorts', 'embed', 'live'].includes(parts[0])) id = parts[1];
+      return id ? `https://www.youtube.com/embed/${id}?autoplay=1` : null;
+    }
+
+    if (host === 'vimeo.com' || host === 'player.vimeo.com') {
+      const id = url.pathname.split('/').filter(Boolean).find((part) => /^\d+$/.test(part));
+      return id ? `https://player.vimeo.com/video/${id}?autoplay=1` : null;
+    }
+  } catch {
+    return null;
   }
-  if (url.includes('vimeo.com')) {
-    const idMatch = url.match(/vimeo\.com\/(\d+)/);
-    return idMatch ? `https://player.vimeo.com/video/${idMatch[1]}?autoplay=1` : null;
-  }
+
   return null;
+}
+
+function isDirectVideoUrl(url) {
+  if (!url) return false;
+  return (
+    url.startsWith('data:video/') ||
+    url.startsWith('blob:') ||
+    /\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(url)
+  );
 }
 
 export default function VideoModal({ video, onClose }) {
   const resolvedUrl = useMediaUrl(video?.url);
+  const [playbackError, setPlaybackError] = useState(false);
+
+  useEffect(() => {
+    setPlaybackError(false);
+  }, [video?.id, resolvedUrl]);
 
   useEffect(() => {
     if (!video) return undefined;
@@ -30,15 +61,12 @@ export default function VideoModal({ video, onClose }) {
     };
   }, [video, onClose]);
 
+  const directUrl = resolvedUrl || video?.url || '';
+  const embed = useMemo(() => toEmbedUrl(directUrl), [directUrl]);
+  const directFile = isDirectVideoUrl(directUrl);
+
   if (!video) return null;
 
-  const embed = toEmbedUrl(resolvedUrl || video.url);
-  const directUrl = resolvedUrl || video.url;
-  const isDirectFile =
-    !!directUrl &&
-    (directUrl.startsWith('data:video/') ||
-      directUrl.startsWith('blob:') ||
-      /\.(mp4|webm|mov)(\?.*)?$/i.test(directUrl));
   const vertical = video.orientacao !== 'horizontal';
 
   return (
@@ -98,8 +126,17 @@ export default function VideoModal({ video, onClose }) {
             allowFullScreen
             style={{ width: '100%', height: '100%', border: 'none' }}
           />
-        ) : isDirectFile ? (
-          <video key={directUrl} src={directUrl} controls autoPlay playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        ) : directFile && !playbackError ? (
+          <video
+            key={directUrl}
+            src={directUrl}
+            controls
+            autoPlay
+            playsInline
+            preload="metadata"
+            onError={() => setPlaybackError(true)}
+            style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#000' }}
+          />
         ) : (
           <div
             style={{
@@ -110,16 +147,16 @@ export default function VideoModal({ video, onClose }) {
               alignItems: 'center',
               justifyContent: 'center',
               gap: 12,
-              color: 'rgba(255,255,255,0.6)',
+              color: 'rgba(255,255,255,0.72)',
               textAlign: 'center',
               padding: 24,
             }}
           >
-            <Film size={32} />
-            <p style={{ fontSize: '0.85rem' }}>
-              Nenhum vídeo vinculado ainda.
-              <br />
-              Adicione o link no modo de edição.
+            {playbackError ? <AlertCircle size={34} /> : <Film size={32} />}
+            <p style={{ fontSize: '0.85rem', lineHeight: 1.6, maxWidth: 360 }}>
+              {playbackError
+                ? 'O navegador não conseguiu reproduzir este arquivo. Use MP4 codificado em H.264/AAC ou WebM.'
+                : 'Nenhum vídeo compatível foi vinculado. Use um link do YouTube/Vimeo ou envie um arquivo MP4/WebM.'}
             </p>
           </div>
         )}

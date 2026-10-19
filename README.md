@@ -59,3 +59,39 @@ src/
 Cada vídeo aceita um link do YouTube, Vimeo ou um arquivo direto (`.mp4`/`.webm`/`.mov`). O player abre em
 um modal dentro da própria página — o cliente nunca precisa sair do site.
 # portifolio_vb_videomaker
+
+## Link compartilhável para o cliente
+
+O botão **Visualizar como cliente** continua sendo apenas uma prévia local.
+O botão **Gerar link para cliente** publica a proposta no Supabase e gera uma URL pública no formato:
+
+```text
+https://ballmannjulia.github.io/portifolio_vb_videomaker/?share=IDENTIFICADOR
+```
+
+### Configuração necessária (uma vez)
+
+1. Crie um projeto gratuito no Supabase.
+2. No SQL Editor do Supabase, execute o arquivo `supabase_setup.sql` deste projeto.
+3. Em **Project Settings > API**, copie a URL do projeto e a chave pública/anon.
+4. Na raiz do projeto, crie `.env.local` com:
+
+```env
+VITE_SUPABASE_URL=https://SEU_PROJETO.supabase.co
+VITE_SUPABASE_ANON_KEY=SUA_CHAVE_PUBLICA
+VITE_SUPABASE_BUCKET=portfolio-media
+VITE_PUBLIC_SITE_URL=https://ballmannjulia.github.io/portifolio_vb_videomaker/
+```
+
+5. No GitHub, abra **Settings > Secrets and variables > Actions** e crie os secrets:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+   - `VITE_SUPABASE_BUCKET` com valor `portfolio-media`
+
+Depois de publicar a atualização no GitHub, o mesmo link funcionará em celular ou computador sem depender do navegador da administradora.
+
+## Vídeos
+
+Para upload pelo editor, use preferencialmente **MP4 codificado em H.264/AAC** ou **WebM**. Arquivos MOV podem abrir em alguns dispositivos e falhar em outros, especialmente no Chrome.
+
+Quando o Supabase está configurado, vídeos, capas e fotos enviados pelo editor são enviados para o bucket público `portfolio-media`. Sem Supabase, eles continuam salvos apenas no navegador para testes locais e não podem ser enviados ao cliente por link.

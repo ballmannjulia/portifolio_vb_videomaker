@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   createDefaultData,
   PROPOSTA_BASE_ID,
-  PROPOSTA_BASE_NOME,
 } from '../data/portfolioData';
 import {
   loadProposalsMap,
@@ -10,13 +9,15 @@ import {
   getActiveProposalId,
   setActiveProposalId,
   generateId,
+  publishSharedProposal,
+  loadSharedProposal,
+  isCloudSharingConfigured,
 } from '../utils/storage';
 
 function deepClone(obj) {
   return JSON.parse(JSON.stringify(obj));
 }
 
-// Aplica um valor em um caminho tipo "cliente.noiva" ou "configuracoes.heroTitulo"
 function setPath(obj, path, value) {
   const clone = deepClone(obj);
   const keys = path.split('.');
@@ -28,7 +29,15 @@ function setPath(obj, path, value) {
   return clone;
 }
 
+function getShareIdFromUrl() {
+  if (typeof window === 'undefined') return '';
+  return new URLSearchParams(window.location.search).get('share') || '';
+}
+
 export function usePortfolio() {
+  const shareIdFromUrl = useMemo(() => getShareIdFromUrl(), []);
+  const isSharedView = Boolean(shareIdFromUrl);
+
   const [proposalsMap, setProposalsMap] = useState(() => loadProposalsMap());
   const [activeId, setActiveId] = useState(() => {
     const id = getActiveProposalId();
@@ -37,6 +46,10 @@ export function usePortfolio() {
   });
   const [editMode, setEditMode] = useState(false);
   const [clientPreview, setClientPreview] = useState(false);
+  const [sharedLoading, setSharedLoading] = useState(isSharedView);
+  const [sharedError, setSharedError] = useState('');
+  const [sharedMeta, setSharedMeta] = useState(null);
+  const [publishState, setPublishState] = useState({ loading: false, url: '', error: '' });
   const [draft, setDraft] = useState(() => {
     const map = loadProposalsMap();
     const id = map[getActiveProposalId()] ? getActiveProposalId() : PROPOSTA_BASE_ID;
@@ -45,20 +58,45 @@ export function usePortfolio() {
 
   const savedData = proposalsMap[activeId]?.data;
   const isDirty = useMemo(
-    () => JSON.stringify(draft) !== JSON.stringify(savedData),
-    [draft, savedData]
+    () => !isSharedView && JSON.stringify(draft) !== JSON.stringify(savedData),
+    [draft, savedData, isSharedView]
   );
 
   useEffect(() => {
-    setActiveProposalId(activeId);
-  }, [activeId]);
+    if (!isSharedView) setActiveProposalId(activeId);
+  }, [activeId, isSharedView]);
+
+  useEffect(() => {
+    if (!isSharedView) return undefined;
+
+    let active = true;
+    setSharedLoading(true);
+    setSharedError('');
+
+    loadSharedProposal(shareIdFromUrl)
+      .then((proposal) => {
+        if (!active) return;
+        setDraft(deepClone(proposal.data));
+        setSharedMeta(proposal);
+      })
+      .catch((error) => {
+        if (!active) return;
+        setSharedError(error?.message || 'Não foi possível carregar esta proposta.');
+      })
+      .finally(() => {
+        if (active) setSharedLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [isSharedView, shareIdFromUrl]);
 
   const persist = useCallback((nextMap) => {
     setProposalsMap(nextMap);
     saveProposalsMap(nextMap);
   }, []);
 
-  // ---------- edição de campos ----------
   const updateField = useCallback((path, value) => {
     setDraft((prev) => setPath(prev, path, value));
   }, []);
@@ -82,7 +120,6 @@ export function usePortfolio() {
     });
   }, []);
 
-  // ---------- vídeos ----------
   const addVideo = useCallback(() => {
     setDraft((prev) => {
       const clone = deepClone(prev);
@@ -107,7 +144,6 @@ export function usePortfolio() {
     });
   }, []);
 
-  // ---------- experiências ----------
   const addExperience = useCallback(() => {
     setDraft((prev) => {
       const clone = deepClone(prev);
@@ -152,7 +188,6 @@ export function usePortfolio() {
     });
   }, []);
 
-  // ---------- depoimentos ----------
   const addTestimonial = useCallback(() => {
     setDraft((prev) => {
       const clone = deepClone(prev);
@@ -177,14 +212,13 @@ export function usePortfolio() {
     });
   }, []);
 
-  // ---------- reordenar / ocultar ----------
   const moveItem = useCallback((listName, id, direction) => {
     setDraft((prev) => {
       const clone = deepClone(prev);
       const list = clone[listName];
       const idx = list.findIndex((i) => i.id === id);
       const newIdx = direction === 'up' ? idx - 1 : idx + 1;
-      if (newIdx < 0 || newIdx >= list.length) return prev;
+      if (idx < 0 || newIdx < 0 || newIdx >= list.length) return prev;
       [list[idx], list[newIdx]] = [list[newIdx], list[idx]];
       return clone;
     });
@@ -213,35 +247,36 @@ export function usePortfolio() {
       const order = clone.configuracoes.sectionOrder;
       const idx = order.indexOf(key);
       const newIdx = direction === 'up' ? idx - 1 : idx + 1;
-      if (newIdx < 0 || newIdx >= order.length) return prev;
+      if (idx < 0 || newIdx < 0 || newIdx >= order.length) return prev;
       [order[idx], order[newIdx]] = [order[newIdx], order[idx]];
       return clone;
     });
   }, []);
 
-  // ---------- ciclo de edição ----------
   const save = useCallback(() => {
+    if (isSharedView) return;
     setProposalsMap((prevMap) => {
       const nextMap = deepClone(prevMap);
+      if (!nextMap[activeId]) return prevMap;
       nextMap[activeId].data = deepClone(draft);
       nextMap[activeId].atualizadaEm = new Date().toISOString();
       saveProposalsMap(nextMap);
       return nextMap;
     });
     setEditMode(false);
-  }, [activeId, draft]);
+    setPublishState((prev) => ({ ...prev, url: '', error: '' }));
+  }, [activeId, draft, isSharedView]);
 
   const cancel = useCallback(() => {
+    if (!proposalsMap[activeId]) return;
     setDraft(deepClone(proposalsMap[activeId].data));
     setEditMode(false);
   }, [proposalsMap, activeId]);
 
   const resetToOriginal = useCallback(() => {
-    const fresh = createDefaultData();
-    setDraft(fresh);
+    setDraft(createDefaultData());
   }, []);
 
-  // ---------- propostas (duplicar / trocar / excluir) ----------
   const duplicateProposal = useCallback(
     (nome) => {
       const id = generateId('proposta');
@@ -253,11 +288,13 @@ export function usePortfolio() {
         data: deepClone(draft),
         criadaEm: new Date().toISOString(),
         atualizadaEm: new Date().toISOString(),
+        shareId: '',
       };
       persist(nextMap);
       setActiveId(id);
       setDraft(deepClone(nextMap[id].data));
       setEditMode(true);
+      setPublishState({ loading: false, url: '', error: '' });
       return id;
     },
     [proposalsMap, draft, persist]
@@ -269,13 +306,15 @@ export function usePortfolio() {
       setActiveId(id);
       setDraft(deepClone(proposalsMap[id].data));
       setEditMode(false);
+      setClientPreview(false);
+      setPublishState({ loading: false, url: '', error: '' });
     },
     [proposalsMap]
   );
 
   const deleteProposal = useCallback(
     (id) => {
-      if (id === PROPOSTA_BASE_ID) return; // a base nunca é excluída
+      if (id === PROPOSTA_BASE_ID) return;
       const nextMap = deepClone(proposalsMap);
       delete nextMap[id];
       persist(nextMap);
@@ -283,6 +322,7 @@ export function usePortfolio() {
         setActiveId(PROPOSTA_BASE_ID);
         setDraft(deepClone(nextMap[PROPOSTA_BASE_ID].data));
       }
+      setPublishState({ loading: false, url: '', error: '' });
     },
     [proposalsMap, activeId, persist]
   );
@@ -298,6 +338,35 @@ export function usePortfolio() {
     [proposalsMap, persist]
   );
 
+  const publishForClient = useCallback(async () => {
+    if (isSharedView) return null;
+
+    const meta = proposalsMap[activeId];
+    if (!meta) return null;
+
+    setPublishState({ loading: true, url: '', error: '' });
+
+    try {
+      const result = await publishSharedProposal({
+        shareId: meta.shareId || '',
+        name: meta.nome,
+        data: draft,
+      });
+
+      const nextMap = deepClone(proposalsMap);
+      nextMap[activeId].shareId = result.shareId;
+      nextMap[activeId].data = deepClone(draft);
+      nextMap[activeId].atualizadaEm = new Date().toISOString();
+      persist(nextMap);
+      setPublishState({ loading: false, url: result.url, error: '' });
+      return result.url;
+    } catch (error) {
+      const message = error?.message || 'Não foi possível gerar o link.';
+      setPublishState({ loading: false, url: '', error: message });
+      return null;
+    }
+  }, [activeId, draft, isSharedView, proposalsMap, persist]);
+
   const proposalsList = useMemo(
     () =>
       Object.values(proposalsMap).sort((a, b) =>
@@ -309,11 +378,16 @@ export function usePortfolio() {
   return {
     data: draft,
     activeId,
-    activeProposalMeta: proposalsMap[activeId],
+    activeProposalMeta: isSharedView ? sharedMeta : proposalsMap[activeId],
     proposalsList,
     editMode,
     clientPreview,
     isDirty,
+    isSharedView,
+    sharedLoading,
+    sharedError,
+    cloudSharingConfigured: isCloudSharingConfigured(),
+    publishState,
     setEditMode,
     setClientPreview,
     updateField,
@@ -338,5 +412,6 @@ export function usePortfolio() {
     switchProposal,
     deleteProposal,
     renameProposal,
+    publishForClient,
   };
 }
