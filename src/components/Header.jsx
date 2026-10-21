@@ -61,10 +61,6 @@ export default function Header({ data, editMode, updateField }) {
         >
           {open ? <X size={18} /> : <Menu size={18} />}
         </button>
-
-        <a href="#contato" className="btn btn-primary no-print desktop-cta">
-          Consultar disponibilidade
-        </a>
       </div>
 
       {open && (
