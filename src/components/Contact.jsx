@@ -1,11 +1,12 @@
 import { Instagram, MessageCircle } from 'lucide-react';
 import EditableText from './EditableText.jsx';
 import { buildWhatsappHref } from '../utils/whatsapp.js';
+import { buildInstagramHref } from '../utils/instagram.js';
 
 export default function Contact({ data, editMode, updateField }) {
   const { configuracoes, contato, cliente } = data;
   const whatsappHref = buildWhatsappHref(data);
-  const instagramHref = `https://instagram.com/${(contato.instagram || '').replace('@', '')}`;
+  const instagramHref = buildInstagramHref(contato.instagram);
 
   return (
     <section id="contato" className="section section--olive">
@@ -42,9 +43,6 @@ export default function Contact({ data, editMode, updateField }) {
           <a href={whatsappHref} target="_blank" rel="noreferrer" className="btn btn-primary">
             <MessageCircle size={15} /> Falar pelo WhatsApp
           </a>
-          <a href="#experiencias" className="btn btn-outline">
-            Consultar disponibilidade
-          </a>
           <a href={instagramHref} target="_blank" rel="noreferrer" className="btn btn-outline">
             <Instagram size={15} /> Instagram
           </a>
@@ -68,9 +66,6 @@ export default function Contact({ data, editMode, updateField }) {
             </Field>
             <Field label="Instagram">
               <EditableText editMode value={contato.instagram} onChange={(v) => updateField('contato.instagram', v)} />
-            </Field>
-            <Field label="E-mail">
-              <EditableText editMode value={contato.email} onChange={(v) => updateField('contato.email', v)} />
             </Field>
             <Field label="Valor personalizado (opcional)">
               <EditableText
